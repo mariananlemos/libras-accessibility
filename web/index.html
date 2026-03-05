@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Libras Accessibility - Sala de Reunião Acessível</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- =====================================================
+       TELA DE PERMISSÕES (aparece primeiro)
+       ===================================================== -->
+  <div id="permissions-screen" class="permissions-screen">
+    <div class="permissions-card">
+      <div class="permissions-icon">🎥</div>
+      <h1>Sala de Reunião Acessível</h1>
+      <p>Para usar a transcrição de voz e tradução em Libras, precisamos de acesso à sua câmera e microfone.</p>
+      
+      <div class="permissions-checklist">
+        <div class="permission-item" id="perm-camera">
+          <span class="perm-icon">📷</span>
+          <span class="perm-text">Câmera</span>
+          <span class="perm-status" id="perm-camera-status">Aguardando</span>
+        </div>
+        <div class="permission-item" id="perm-mic">
+          <span class="perm-icon">🎤</span>
+          <span class="perm-text">Microfone</span>
+          <span class="perm-status" id="perm-mic-status">Aguardando</span>
+        </div>
+      </div>
+      
+      <button id="btn-request-permissions" class="btn-permissions">
+        🚀 Permitir e Entrar na Sala
+      </button>
+      
+      <p class="permissions-note">
+        Suas permissões são usadas apenas localmente. Nenhum dado é enviado para servidores.
+      </p>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SALA DE REUNIÃO PRINCIPAL
+       ===================================================== -->
+  <div id="meeting-room" class="meeting-room hidden">
+    
+    <!-- CABEÇALHO DA REUNIÃO -->
+    <header class="meeting-header">
+      <div class="meeting-info">
+        <h1>🤟 Reunião Acessível</h1>
+        <span class="meeting-time" id="meeting-time">00:00:00</span>
+      </div>
+      <div class="meeting-actions">
+        <button id="btn-leave" class="btn-leave">Sair da Reunião</button>
+      </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL DA REUNIÃO -->
+    <main class="meeting-content">
+      
+      <!-- GRID DE VÍDEO -->
+      <section class="video-grid">
+        
+        <!-- VÍDEO DO USUÁRIO (câmera local) -->
+        <div class="video-tile user-video">
+          <video id="local-video" autoplay muted playsinline></video>
+          <div class="video-overlay">
+            <span class="participant-name">Você</span>
+            <div class="audio-indicator" id="audio-indicator">
+              <span class="audio-bar"></span>
+              <span class="audio-bar"></span>
+              <span class="audio-bar"></span>
+            </div>
+          </div>
+          <div class="video-off-placeholder" id="video-off-placeholder">
+            <span>📷</span>
+            <p>Câmera desligada</p>
+          </div>
+        </div>
+        
+        <!-- AVATAR VLIBRAS (intérprete virtual) -->
+        <div class="video-tile vlibras-tile">
+          <div class="vlibras-wrapper" id="vlibras-wrapper">
+            <div class="vlibras-placeholder" id="vlibras-placeholder">
+              <div class="avatar-silhouette">
+                <div class="avatar-head"></div>
+                <div class="avatar-body"></div>
+              </div>
+              <p id="vlibras-loading-text">Carregando intérprete...</p>
+            </div>
+          </div>
+          <div class="video-overlay">
+            <span class="participant-name">🤟 Intérprete de Libras</span>
+            <span class="vlibras-badge" id="vlibras-badge">Carregando</span>
+          </div>
+        </div>
+        
+      </section>
+
+      <!-- PAINEL DE LEGENDA/TRANSCRIÇÃO -->
+      <section class="captions-panel">
+        <div class="captions-header">
+          <span>📝 Legendas em tempo real</span>
+          <div class="captions-actions">
+            <button id="btn-clear-captions" class="btn-icon-small" title="Limpar legendas">🗑️</button>
+          </div>
+        </div>
+        <div class="captions-content" id="captions-content">
+          <p class="caption-text" id="caption-text">
+            As legendas aparecerão aqui quando você começar a falar...
+          </p>
+          <p class="caption-interim" id="caption-interim"></p>
+        </div>
+      </section>
+      
+    </main>
+
+    <!-- BARRA DE CONTROLES (estilo reunião) -->
+    <footer class="meeting-controls">
+      
+      <!-- Controle de Microfone -->
+      <div class="control-group">
+        <button id="btn-mic" class="control-btn mic-on" title="Desligar microfone">
+          <span class="control-icon">🎤</span>
+        </button>
+        <span class="control-label">Microfone</span>
+      </div>
+      
+      <!-- Controle de Câmera -->
+      <div class="control-group">
+        <button id="btn-camera" class="control-btn camera-on" title="Desligar câmera">
+          <span class="control-icon">📷</span>
+        </button>
+        <span class="control-label">Câmera</span>
+      </div>
+      
+      <!-- Controle de Transcrição -->
+      <div class="control-group">
+        <button id="btn-transcription" class="control-btn" title="Ativar transcrição">
+          <span class="control-icon">💬</span>
+        </button>
+        <span class="control-label">Transcrição</span>
+      </div>
+      
+      <!-- Controle de Libras -->
+      <div class="control-group">
+        <button id="btn-libras" class="control-btn active" title="VLibras ativo">
+          <span class="control-icon">🤟</span>
+        </button>
+        <span class="control-label">Libras</span>
+      </div>
+      
+      <!-- Indicador de Status -->
+      <div class="status-display">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">Pronto</span>
+      </div>
+      
+    </footer>
+    
+  </div>
+
+  <!-- WIDGET VLIBRAS OFICIAL -->
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  
+  <!-- Script do VLibras -->
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script>
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+  </script>
+  
+  <!-- Script da aplicação -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,691 @@
+/**
+ * =====================================================
+ * LIBRAS ACCESSIBILITY - Sala de Reunião Acessível
+ * =====================================================
+ * 
+ * Design inspirado em plataformas de videoconferência
+ * com integração de acessibilidade em Libras
+ */
+
+/* ==================== RESET E BASE ==================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Cores principais - Tema Escuro */
+  --bg-primary: #0f0f17;
+  --bg-secondary: #1a1a25;
+  --bg-tertiary: #252535;
+  --bg-hover: #35354a;
+  --bg-card: #1e1e2d;
+  
+  /* Cores de texto */
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b5;
+  --text-muted: #606075;
+  
+  /* Cores de destaque */
+  --accent-green: #00c853;
+  --accent-blue: #2979ff;
+  --accent-red: #ff1744;
+  --accent-yellow: #ffc107;
+  --accent-purple: #7c4dff;
+  
+  /* Status */
+  --mic-on: #00c853;
+  --mic-off: #ff1744;
+  --camera-on: #2979ff;
+  --camera-off: #ff1744;
+  
+  /* Bordas e sombras */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+  
+  /* Dimensões */
+  --border-radius: 12px;
+  --border-radius-lg: 16px;
+  --spacing: 16px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ==================== TELA DE PERMISSÕES ==================== */
+.permissions-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a30 100%);
+  z-index: 1000;
+}
+
+.permissions-screen.hidden {
+  display: none;
+}
+
+.permissions-card {
+  background: var(--bg-card);
+  padding: 48px;
+  border-radius: var(--border-radius-lg);
+  text-align: center;
+  max-width: 480px;
+  width: 90%;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.permissions-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.permissions-card h1 {
+  font-size: 28px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.permissions-card > p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.permissions-checklist {
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.permission-item:hover {
+  background: var(--bg-hover);
+}
+
+.perm-icon {
+  font-size: 24px;
+}
+
+.perm-text {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+}
+
+.perm-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+.perm-status.granted {
+  background: rgba(0, 200, 83, 0.15);
+  color: var(--accent-green);
+}
+
+.perm-status.denied {
+  background: rgba(255, 23, 68, 0.15);
+  color: var(--accent-red);
+}
+
+.btn-permissions {
+  width: 100%;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(41, 121, 255, 0.3);
+}
+
+.btn-permissions:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(41, 121, 255, 0.4);
+}
+
+.btn-permissions:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.permissions-note {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ==================== SALA DE REUNIÃO ==================== */
+.meeting-room {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.meeting-room.hidden {
+  display: none;
+}
+
+/* ==================== CABEÇALHO DA REUNIÃO ==================== */
+.meeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.meeting-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.meeting-info h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.meeting-time {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+  background: var(--bg-tertiary);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.btn-leave {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: var(--accent-red);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-leave:hover {
+  background: #e01640;
+}
+
+/* ==================== CONTEÚDO PRINCIPAL ==================== */
+.meeting-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing);
+  gap: var(--spacing);
+  overflow: hidden;
+}
+
+/* ==================== GRID DE VÍDEO ==================== */
+.video-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing);
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  .video-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== TILES DE VÍDEO ==================== */
+.video-tile {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+}
+
+.video-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.participant-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* ==================== INDICADOR DE ÁUDIO ==================== */
+.audio-indicator {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 20px;
+}
+
+.audio-bar {
+  width: 4px;
+  background: var(--accent-green);
+  border-radius: 2px;
+  transition: height 0.1s ease;
+}
+
+.audio-bar:nth-child(1) { height: 6px; }
+.audio-bar:nth-child(2) { height: 12px; }
+.audio-bar:nth-child(3) { height: 8px; }
+
+.audio-indicator.active .audio-bar {
+  animation: audioWave 0.5s ease-in-out infinite alternate;
+}
+
+.audio-indicator.active .audio-bar:nth-child(1) { animation-delay: 0s; }
+.audio-indicator.active .audio-bar:nth-child(2) { animation-delay: 0.1s; }
+.audio-indicator.active .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+
+@keyframes audioWave {
+  0% { height: 4px; }
+  100% { height: 18px; }
+}
+
+.audio-indicator.muted .audio-bar {
+  background: var(--accent-red);
+  animation: none;
+  height: 4px;
+}
+
+/* ==================== PLACEHOLDER DE CÂMERA ==================== */
+.video-off-placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  z-index: 5;
+}
+
+.video-off-placeholder span {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.video-off-placeholder.visible {
+  display: flex;
+}
+
+/* ==================== ÁREA DO VLIBRAS ==================== */
+.vlibras-tile {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.vlibras-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.vlibras-placeholder {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.vlibras-placeholder.hidden {
+  display: none;
+}
+
+.avatar-silhouette {
+  margin: 0 auto 16px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.avatar-head {
+  width: 60px;
+  height: 60px;
+  background: var(--bg-hover);
+  border-radius: 50%;
+  margin: 0 auto 8px;
+}
+
+.avatar-body {
+  width: 80px;
+  height: 100px;
+  background: var(--bg-hover);
+  border-radius: 40px 40px 20px 20px;
+  margin: 0 auto;
+}
+
+.vlibras-badge {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+.vlibras-badge.ready {
+  background: rgba(0, 200, 83, 0.15);
+  color: var(--accent-green);
+}
+
+/* ==================== PAINEL DE LEGENDAS ==================== */
+.captions-panel {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  max-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.captions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.captions-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon-small {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.btn-icon-small:hover {
+  background: var(--bg-hover);
+}
+
+.captions-content {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.caption-text {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.caption-interim {
+  font-size: 15px;
+  color: var(--accent-blue);
+  font-style: italic;
+  margin-top: 8px;
+  opacity: 0.9;
+}
+
+/* ==================== BARRA DE CONTROLES ==================== */
+.meeting-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.05);
+}
+
+.control-icon {
+  font-size: 22px;
+}
+
+.control-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Estados dos botões */
+.control-btn.mic-on {
+  background: var(--bg-tertiary);
+}
+
+.control-btn.mic-off {
+  background: var(--accent-red);
+}
+
+.control-btn.camera-on {
+  background: var(--bg-tertiary);
+}
+
+.control-btn.camera-off {
+  background: var(--accent-red);
+}
+
+.control-btn.active {
+  background: var(--accent-blue);
+}
+
+.control-btn.transcribing {
+  background: var(--accent-green);
+  animation: pulseGlow 1.5s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(0, 200, 83, 0); }
+}
+
+/* Status Display */
+.status-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+  padding-left: 24px;
+  border-left: 1px solid var(--border-color);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.status-dot.listening {
+  background: var(--accent-green);
+  animation: blink 1s infinite;
+}
+
+.status-dot.error {
+  background: var(--accent-red);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ==================== VLIBRAS WIDGET OVERRIDE ==================== */
+/* Esconde o botão flutuante padrão do VLibras */
+[vw-access-button] {
+  display: none !important;
+}
+
+/* Move o player para dentro da nossa área */
+.vlibras-wrapper .vw-plugin-wrapper,
+.vlibras-tile .vw-plugin-wrapper {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 60px !important;
+  width: 100% !important;
+  height: calc(100% - 60px) !important;
+  transform: none !important;
+}
+
+/* O wrapper global fica escondido */
+body > [vw].enabled > .vw-plugin-wrapper {
+  position: fixed !important;
+  bottom: 100px !important;
+  right: 20px !important;
+  width: 400px !important;
+  height: 500px !important;
+  z-index: 9999 !important;
+}
+
+/* ==================== HIDDEN HELPER ==================== */
+.hidden {
+  display: none !important;
+}
+
+/* ==================== SCROLLBAR ==================== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 3px;
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (max-width: 600px) {
+  .meeting-header {
+    padding: 10px 16px;
+  }
+  
+  .meeting-info h1 {
+    font-size: 14px;
+  }
+  
+  .meeting-controls {
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  
+  .control-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .control-icon {
+    font-size: 18px;
+  }
+  
+  .control-label {
+    display: none;
+  }
+  
+  .status-display {
+    display: none;
+  }
+  
+  .captions-panel {
+    max-height: 120px;
+  }
+  
+  .video-tile {
+    min-height: 180px;
+  }
+}
