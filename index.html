@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CSP removido para permitir carregamento do VLibras -->
+  <title>Libras Accessibility</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- =====================================================
+       CONTAINER PRINCIPAL DA APLICAÇÃO
+       ===================================================== -->
+  <div class="app-container">
+    
+    <!-- BARRA DE TÍTULO CUSTOMIZADA (permite arrastar a janela) -->
+    <div class="title-bar">
+      <div class="title-bar-drag-area">
+        <span class="app-title">♿ Libras Accessibility</span>
+      </div>
+      <div class="window-controls">
+        <!-- Botão de fixar janela no topo -->
+        <button id="btn-pin" class="control-btn pin-btn active" title="Fixar no topo">
+          📌
+        </button>
+        <!-- Botão de minimizar -->
+        <button id="btn-minimize" class="control-btn" title="Minimizar">
+          ─
+        </button>
+        <!-- Botão de fechar -->
+        <button id="btn-close" class="control-btn close-btn" title="Fechar">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- ÁREA DO AVATAR VLIBRAS -->
+    <div class="vlibras-container">
+      <div id="vlibras-area">
+        <!-- Placeholder enquanto carrega -->
+        <div class="vlibras-placeholder" id="vlibras-placeholder">
+          <div class="avatar-silhouette">
+            <div class="avatar-head"></div>
+            <div class="avatar-body"></div>
+          </div>
+          <p id="vlibras-status">Carregando VLibras...</p>
+        </div>
+        
+        <!-- Widget VLibras (DENTRO da área específica) -->
+        <div vw class="enabled">
+          <div vw-access-button class="active"></div>
+          <div vw-plugin-wrapper>
+            <div class="vw-plugin-top-wrapper"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLES DE TRANSCRIÇÃO -->
+    <div class="controls-container">
+      <div class="controls-row">
+        <!-- Botão principal de iniciar/pausar transcrição -->
+        <button id="btn-transcribe" class="btn-primary">
+          <span class="btn-icon">🎤</span>
+          <span class="btn-text">Iniciar Transcrição</span>
+        </button>
+      </div>
+      
+      <div class="controls-row secondary">
+        <!-- Indicador de status -->
+        <div class="status-indicator">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">Aguardando...</span>
+        </div>
+        
+        <!-- Controle de opacidade -->
+        <div class="opacity-control">
+          <label for="opacity-slider">Opacidade:</label>
+          <input type="range" id="opacity-slider" min="30" max="100" value="95">
+        </div>
+      </div>
+    </div>
+
+    <!-- ÁREA DE LEGENDA/TRANSCRIÇÃO -->
+    <div class="subtitle-container">
+      <div class="subtitle-header">
+        <span>📝 Transcrição em tempo real</span>
+        <button id="btn-clear" class="btn-small" title="Limpar texto">🗑️</button>
+      </div>
+      <div class="subtitle-box" id="subtitle-box">
+        <p id="subtitle-text" class="subtitle-text">
+          As legendas aparecerão aqui quando você iniciar a transcrição...
+        </p>
+        <p id="interim-text" class="interim-text"></p>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO DE TEXTOS (minimizável) -->
+    <div class="history-container" id="history-container">
+      <div class="history-header" id="history-header">
+        <span>📜 Histórico</span>
+        <span class="toggle-icon" id="history-toggle">▼</span>
+      </div>
+      <div class="history-content" id="history-content">
+        <ul id="history-list">
+          <!-- Histórico de frases será adicionado aqui -->
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =====================================================
+       SCRIPTS
+       ===================================================== -->
+  
+  <!-- Widget do VLibras (API oficial do governo) -->
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  
+  <!-- Inicialização do VLibras Widget -->
+  <script>
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+  </script>
+  
+  <!-- Script principal do renderer -->
+  <script src="renderer.js"></script>
+</body>
+</html>

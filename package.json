@@ -1,0 +1,46 @@
+{
+  "name": "libras-accessibility",
+  "version": "1.0.0",
+  "description": "Aplicativo de acessibilidade que captura áudio em tempo real e traduz para Libras usando VLibras",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "libras",
+    "acessibilidade",
+    "accessibility",
+    "vlibras",
+    "speech-to-text",
+    "electron"
+  ],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.libras.accessibility",
+    "productName": "Libras Accessibility",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}
