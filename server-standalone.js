@@ -10,13 +10,24 @@
  * - Desenvolvimento sem Electron
  * 
  * Uso: npm run web
+ * 
+ * IMPORTANTE: Iniciar também o backend Flask (python app.py)
+ * para usar a transcrição com Whisper
  */
 
 const express = require('express');
 const path = require('path');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const FLASK_PORT = process.env.FLASK_PORT || 5000;
+
+// Proxy para rota de transcrição -> Flask backend
+app.use('/transcribe', createProxyMiddleware({
+  target: `http://localhost:${FLASK_PORT}`,
+  changeOrigin: true
+}));
 
 // Serve arquivos estáticos da pasta 'web'
 app.use(express.static(path.join(__dirname, 'web')));
@@ -39,6 +50,10 @@ app.listen(PORT, () => {
   console.log('      Clique na aba "PORTS" e abra a URL gerada');
   console.log('');
   console.log('   ⚡ O VLibras carregará normalmente via HTTP');
+  console.log('');
+  console.log('   🎙️ Para transcrição com Whisper:');
+  console.log('      1. pip install -r requirements.txt');
+  console.log('      2. python app.py');
   console.log('');
   console.log('═══════════════════════════════════════════════════════');
   console.log('');

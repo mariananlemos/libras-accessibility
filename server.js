@@ -10,12 +10,14 @@
 
 const express = require('express');
 const path = require('path');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 let server = null;
 
 // Porta padrão (pode ser alterada se estiver em uso)
 const DEFAULT_PORT = 3847;
+const FLASK_PORT = process.env.FLASK_PORT || 5000;
 
 /**
  * Inicia o servidor Express
@@ -23,6 +25,12 @@ const DEFAULT_PORT = 3847;
  */
 function startServer() {
   return new Promise((resolve, reject) => {
+    // Proxy para rota de transcrição -> Flask backend
+    app.use('/transcribe', createProxyMiddleware({
+      target: `http://localhost:${FLASK_PORT}`,
+      changeOrigin: true
+    }));
+
     // Serve arquivos estáticos da pasta 'web'
     app.use(express.static(path.join(__dirname, 'web')));
 
