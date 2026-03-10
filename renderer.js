@@ -57,52 +57,33 @@ const state = {
 // ==================== VLIBRAS ====================
 
 /**
- * Aguarda o VLibras estar pronto
+ * Aguarda o VLibras estar pronto (via IPC)
  */
 function waitForVLibras() {
-  console.log('🔄 Aguardando VLibras...');
-  updateVLibrasStatus('Carregando VLibras...');
+  console.log('🔄 Aguardando VLibras (via janela isolada)...');
+  updateVLibrasStatus('Conectando ao VLibras...');
   
-  // Verifica se o VLibras já está carregado
-  const checkVLibras = setInterval(() => {
-    // Procura pelo widget do VLibras
-    const vwWrapper = document.querySelector('.vw-plugin-wrapper');
-    const vwPlayer = document.querySelector('[vw-plugin-wrapper]');
-    const vwAccess = document.querySelector('[vw-access-button]');
-    
-    console.log('🔍 Verificando VLibras...', {
-      wrapper: !!vwWrapper,
-      player: !!vwPlayer,
-      access: !!vwAccess
-    });
-    
-    if (vwWrapper || vwPlayer || vwAccess) {
-      clearInterval(checkVLibras);
+  // Escuta eventos do VLibras via IPC
+  if (window.electronAPI) {
+    window.electronAPI.onVLibrasReady((ready) => {
       state.vlibrasReady = true;
       hideVLibrasPlaceholder();
       updateVLibrasStatus('VLibras pronto! ✅');
-      console.log('✅ VLibras carregado com sucesso!');
-      
-      // Abre o player automaticamente
-      setTimeout(() => {
-        const accessBtn = document.querySelector('[vw-access-button]');
-        if (accessBtn && !accessBtn.classList.contains('active')) {
-          accessBtn.click();
-          console.log('🖱️ VLibras player aberto automaticamente');
-        }
-      }, 1000);
-    }
-  }, 500);
-  
-  // Timeout após 15 segundos
-  setTimeout(() => {
-    if (!state.vlibrasReady) {
-      clearInterval(checkVLibras);
-      console.warn('⚠️ VLibras demorou para carregar');
-      updateVLibrasStatus('VLibras carregando lentamente...');
-      hideVLibrasPlaceholder();
-    }
-  }, 15000);
+      console.log('✅ VLibras conectado via IPC!');
+    });
+    
+    window.electronAPI.onVLibrasTranslating((text) => {
+      console.log('📤 VLibras traduzindo:', text);
+    });
+    
+    window.electronAPI.onVLibrasError((error) => {
+      console.error('❌ Erro no VLibras:', error);
+      updateVLibrasStatus('Erro no VLibras: ' + error);
+    });
+  } else {
+    console.warn('⚠️ electronAPI não disponível');
+    updateVLibrasStatus('IPC não disponível');
+  }
 }
 
 function hideVLibrasPlaceholder() {
@@ -122,15 +103,15 @@ function updateVLibrasStatus(message) {
 }
 
 /**
- * Envia texto para o VLibras traduzir
- * Usa a API interna do widget
+ * Envia texto para o VLibras traduzir via IPC
+ * Usa a janela isolada do VLibras para evitar problemas de CSP
  */
 function translateToLibras(text) {
   if (!text || text.trim() === '') return;
   if (text === state.lastTranslatedText) return;
   
   state.lastTranslatedText = text;
-  console.log('📤 Enviando para VLibras:', text);
+  console.log('📤 Enviando para VLibras (via IPC):', text);
   
   if (state.translateTimeout) {
     clearTimeout(state.translateTimeout);
@@ -138,60 +119,13 @@ function translateToLibras(text) {
   
   state.translateTimeout = setTimeout(() => {
     try {
-      // Método 1: Usando a textarea do VLibras
-      const vwTextarea = document.querySelector('.vw-plugin-wrapper textarea');
-      const vwInput = document.querySelector('.vw-plugin-wrapper input[type="text"]');
-      const vwSendBtn = document.querySelector('.vw-plugin-wrapper .vw-btn-send, .vw-plugin-wrapper button[type="submit"]');
-      
-      const inputElement = vwTextarea || vwInput;
-      
-      if (inputElement) {
-        // Limpa e insere o novo texto
-        inputElement.value = text;
-        inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        console.log('✅ Texto inserido no VLibras');
-        
-        // Clica no botão de enviar após um breve delay
-        setTimeout(() => {
-          if (vwSendBtn) {
-            vwSendBtn.click();
-            console.log('🖱️ Botão de traduzir clicado');
-          } else {
-            // Tenta enviar via Enter
-            const enterEvent = new KeyboardEvent('keydown', {
-              key: 'Enter',
-              code: 'Enter',
-              keyCode: 13,
-              which: 13,
-              bubbles: true
-            });
-            inputElement.dispatchEvent(enterEvent);
-            console.log('⌨️ Enter enviado');
-          }
-        }, 200);
-        
-        return;
+      // Envia para a janela VLibras via IPC
+      if (window.electronAPI && window.electronAPI.translateToLibras) {
+        window.electronAPI.translateToLibras(text);
+        console.log('✅ Texto enviado via IPC');
+      } else {
+        console.warn('⚠️ electronAPI.translateToLibras não disponível');
       }
-      
-      // Método 2: Procura outros elementos
-      const allInputs = document.querySelectorAll('.vw-plugin-wrapper input, .vw-plugin-wrapper textarea');
-      console.log('🔍 Inputs encontrados:', allInputs.length);
-      
-      allInputs.forEach((input, i) => {
-        console.log(`  Input ${i}:`, input.type, input.className);
-      });
-      
-      // Método 3: Usa o evento global do VLibras
-      if (window.VLibras && typeof window.VLibras.translate === 'function') {
-        window.VLibras.translate(text);
-        console.log('✅ VLibras.translate() chamado');
-        return;
-      }
-      
-      console.warn('⚠️ Não foi possível enviar texto para o VLibras');
-      
     } catch (error) {
       console.error('❌ Erro ao traduzir:', error);
     }

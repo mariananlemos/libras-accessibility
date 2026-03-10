@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VLibras Bridge</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+    
+    /* Posiciona o VLibras para ocupar toda a área */
+    #vlibras-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Estilização do widget VLibras */
+    [vw] {
+      position: relative !important;
+      z-index: 1;
+    }
+    
+    [vw-access-button] {
+      display: none !important; /* Esconde o botão de acesso, controlamos via código */
+    }
+    
+    .vw-plugin-wrapper {
+      position: relative !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* Status de carregamento */
+    #loading-status {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #666;
+      font-family: Arial, sans-serif;
+    }
+    
+    #loading-status.hidden {
+      display: none;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="vlibras-container">
+    <!-- Status de carregamento -->
+    <div id="loading-status">
+      <div class="spinner"></div>
+      <p>Carregando VLibras...</p>
+    </div>
+    
+    <!-- Widget VLibras -->
+    <div vw class="enabled">
+      <div vw-access-button class="active"></div>
+      <div vw-plugin-wrapper>
+        <div class="vw-plugin-top-wrapper"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widget do VLibras oficial -->
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  
+  <script>
+    /**
+     * VLibras Bridge - Ponte para comunicação IPC
+     * Este script roda em uma janela Electron isolada
+     * e se comunica com a janela principal via IPC
+     */
+    
+    let vlibrasReady = false;
+    let pendingText = null;
+    
+    // Inicializa o VLibras
+    function initVLibras() {
+      console.log('[VLibras Bridge] Inicializando VLibras...');
+      
+      try {
+        new window.VLibras.Widget('https://vlibras.gov.br/app');
+        console.log('[VLibras Bridge] Widget criado');
+        
+        // Aguarda o widget estar pronto
+        waitForVLibrasReady();
+      } catch (error) {
+        console.error('[VLibras Bridge] Erro ao criar widget:', error);
+        notifyMain('vlibras-error', error.message);
+      }
+    }
+    
+    // Aguarda o VLibras estar completamente carregado
+    function waitForVLibrasReady() {
+      let checkCount = 0;
+      const maxChecks = 100; // 30 segundos (100 * 300ms)
+      
+      const checkInterval = setInterval(() => {
+        checkCount++;
+        const wrapper = document.querySelector('.vw-plugin-wrapper');
+        const accessBtn = document.querySelector('[vw-access-button]');
+        const player = document.querySelector('.vw-player');
+        
+        console.log(`[VLibras Bridge] Verificação ${checkCount}:`, {
+          wrapper: !!wrapper,
+          accessBtn: !!accessBtn,
+          player: !!player
+        });
+        
+        // Verifica múltiplos elementos para garantir que o VLibras está pronto
+        if ((wrapper || player) && accessBtn) {
+          clearInterval(checkInterval);
+          vlibrasReady = true;
+          
+          // Esconde o loading
+          document.getElementById('loading-status').classList.add('hidden');
+          
+          // Abre o player automaticamente
+          setTimeout(() => {
+            if (accessBtn) {
+              accessBtn.click();
+              console.log('[VLibras Bridge] Player aberto');
+            }
+          }, 500);
+          
+          console.log('[VLibras Bridge] VLibras pronto!');
+          notifyMain('vlibras-ready', true);
+          
+          // Processa texto pendente
+          if (pendingText) {
+            translateText(pendingText);
+            pendingText = null;
+          }
+        }
+        
+        // Timeout após maxChecks
+        if (checkCount >= maxChecks && !vlibrasReady) {
+          clearInterval(checkInterval);
+          document.getElementById('loading-status').innerHTML = '<p>Erro ao carregar VLibras. <button onclick="location.reload()">Tentar novamente</button></p>';
+          notifyMain('vlibras-error', 'Timeout ao carregar VLibras');
+        }
+      }, 300);
+    }
+    
+    // Traduz texto para Libras
+    function translateText(text) {
+      if (!text || text.trim() === '') return;
+      
+      if (!vlibrasReady) {
+        console.log('[VLibras Bridge] VLibras não está pronto, aguardando...');
+        pendingText = text;
+        return;
+      }
+      
+      console.log('[VLibras Bridge] Traduzindo:', text);
+      
+      try {
+        // Método 1: Usando o textarea/input do VLibras
+        const vwTextarea = document.querySelector('.vw-plugin-wrapper textarea');
+        const vwInput = document.querySelector('.vw-plugin-wrapper input[type="text"]');
+        const vwSendBtn = document.querySelector('.vw-plugin-wrapper .vw-btn-send, .vw-plugin-wrapper button[type="submit"]');
+        
+        const inputElement = vwTextarea || vwInput;
+        
+        if (inputElement) {
+          inputElement.value = text;
+          inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+          inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          setTimeout(() => {
+            if (vwSendBtn) {
+              vwSendBtn.click();
+            } else {
+              // Envia via Enter
+              const enterEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true
+              });
+              inputElement.dispatchEvent(enterEvent);
+            }
+            
+            notifyMain('vlibras-translating', text);
+          }, 100);
+          
+          return;
+        }
+        
+        // Método 2: API direta do VLibras (se disponível)
+        if (window.VLibras && typeof window.VLibras.translate === 'function') {
+          window.VLibras.translate(text);
+          notifyMain('vlibras-translating', text);
+          return;
+        }
+        
+        console.warn('[VLibras Bridge] Não foi possível traduzir');
+        notifyMain('vlibras-error', 'Método de tradução não encontrado');
+        
+      } catch (error) {
+        console.error('[VLibras Bridge] Erro ao traduzir:', error);
+        notifyMain('vlibras-error', error.message);
+      }
+    }
+    
+    // Notifica a janela principal via IPC
+    function notifyMain(channel, data) {
+      if (window.vlibrasAPI && window.vlibrasAPI.send) {
+        window.vlibrasAPI.send(channel, data);
+      }
+    }
+    
+    // Escuta comandos da janela principal
+    if (window.vlibrasAPI && window.vlibrasAPI.receive) {
+      window.vlibrasAPI.receive('translate-to-libras', (text) => {
+        translateText(text);
+      });
+    }
+    
+    // Expõe função global para tradução (fallback)
+    window.translateToLibras = translateText;
+    
+    // Inicializa quando o DOM estiver pronto
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initVLibras);
+    } else {
+      initVLibras();
+    }
+  </script>
+</body>
+</html>

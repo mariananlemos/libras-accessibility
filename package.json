@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "web": "node server-standalone.js",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
@@ -42,5 +43,8 @@
       "target": "AppImage",
       "icon": "assets/icon.png"
     }
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

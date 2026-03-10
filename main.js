@@ -5,72 +5,70 @@
  * 
  * Este arquivo é o processo principal do Electron.
  * Ele é responsável por:
- * - Criar a janela flutuante do aplicativo
+ * - Iniciar o servidor Express local
+ * - Criar a janela da sala de reunião
  * - Gerenciar o ciclo de vida da aplicação
- * - Configurar as propriedades da janela (alwaysOnTop, transparência, etc.)
+ * 
+ * O VLibras funciona carregando a página via HTTP (servidor local),
+ * evitando problemas de CSP/CORS do Electron com file://
  */
 
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
-const path = require('path');
+const { app, BrowserWindow, screen } = require('electron');
+const { startServer, stopServer } = require('./server');
 
 // Variável global para manter referência da janela principal
 let mainWindow;
+let serverPort = null;
 
 /**
  * Cria a janela principal do aplicativo
- * A janela é configurada para ser flutuante, semi-transparente e sempre no topo
+ * Carrega a sala de reunião servida pelo Express local
  */
 function createWindow() {
-  // Obtém as dimensões da tela para posicionar a janela
+  // Obtém as dimensões da tela
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   
-  // Dimensões da janela flutuante
-  const windowWidth = 420;
-  const windowHeight = 550;
+  // Dimensões da janela da sala de reunião (maior para acomodar vídeo + VLibras)
+  const windowWidth = 1200;
+  const windowHeight = 800;
   
-  // Cria a janela do navegador com as configurações especificadas
+  // Cria a janela do navegador
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
-    // Posiciona a janela no canto inferior direito da tela
-    x: screenWidth - windowWidth - 20,
-    y: screenHeight - windowHeight - 20,
+    // Centraliza a janela
+    x: Math.floor((screenWidth - windowWidth) / 2),
+    y: Math.floor((screenHeight - windowHeight) / 2),
     // Configurações visuais
-    frame: false, // Remove a barra de título padrão do sistema
-    transparent: true, // Permite transparência no fundo
-    alwaysOnTop: true, // IMPORTANTE: Mantém a janela sempre sobre outras (Google Meet, Teams, etc.)
-    resizable: true, // Permite redimensionamento
-    skipTaskbar: false, // Aparece na barra de tarefas
-    // Configurações de segurança e funcionalidade
+    frame: true, // Barra de título do sistema
+    resizable: true,
+    // Configurações de segurança
     webPreferences: {
-      nodeIntegration: false, // Desabilita integração do Node por segurança
-      contextIsolation: true, // Isola o contexto para maior segurança
-      preload: path.join(__dirname, 'preload.js'), // Script de pré-carregamento
-      webSecurity: false, // Desabilitado temporariamente para permitir VLibras
-      allowRunningInsecureContent: true, // Permite conteúdo misto
+      nodeIntegration: false,
+      contextIsolation: true,
+      // Não precisa de preload para a sala de reunião web
+      webSecurity: true, // Pode manter segurança pois está servindo via HTTP
     },
-    // Configurações adicionais de aparência
-    hasShadow: true, // Adiciona sombra à janela
-    roundedCorners: true, // Bordas arredondadas (Windows 11)
-    backgroundColor: '#00000000', // Fundo transparente
+    hasShadow: true,
+    backgroundColor: '#1a1a2e',
   });
 
-  // Carrega o arquivo HTML da interface
-  mainWindow.loadFile('index.html');
-
-  // Define o nível de always on top para garantir que fique sobre todas as janelas
-  mainWindow.setAlwaysOnTop(true, 'screen-saver');
-  
-  // Permite que a janela apareça em todos os workspaces (útil para Linux/Mac)
-  mainWindow.setVisibleOnAllWorkspaces(true);
+  // Carrega a URL do servidor local (VLibras funciona normalmente via HTTP!)
+  if (serverPort) {
+    mainWindow.loadURL(`http://localhost:${serverPort}`);
+    console.log(`[Main] Carregando http://localhost:${serverPort}`);
+  } else {
+    console.error('[Main] Servidor não iniciado!');
+    mainWindow.loadFile('index.html'); // Fallback
+  }
 
   // Evento quando a janela é fechada
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 
-  // Abre as DevTools em modo de desenvolvimento (comente para produção)
-  mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // DevTools em desenvolvimento
+  // mainWindow.webContents.openDevTools({ mode: 'detach' });
 }
 
 /**
@@ -78,55 +76,44 @@ function createWindow() {
  */
 
 // Minimiza a janela quando solicitado pelo renderer
-ipcMain.on('minimize-window', () => {
-  if (mainWindow) {
-    mainWindow.minimize();
-  }
-});
-
-// Fecha a janela/aplicação quando solicitado
-ipcMain.on('close-window', () => {
-  if (mainWindow) {
-    mainWindow.close();
-  }
-});
-
-// Alterna o estado always on top
-ipcMain.on('toggle-always-on-top', (event, value) => {
-  if (mainWindow) {
-    mainWindow.setAlwaysOnTop(value, 'screen-saver');
-    event.reply('always-on-top-changed', value);
-  }
-});
-
-// Alterna a opacidade da janela
-ipcMain.on('set-opacity', (event, opacity) => {
-  if (mainWindow) {
-    mainWindow.setOpacity(opacity);
-  }
-});
-
 /**
  * Eventos do ciclo de vida da aplicação
  */
 
 // Quando o Electron terminar a inicialização
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  try {
+    // Inicia o servidor Express primeiro
+    console.log('[Main] Iniciando servidor Express...');
+    serverPort = await startServer();
+    console.log(`[Main] Servidor pronto na porta ${serverPort}`);
+    
+    // Agora cria a janela que carrega a URL do servidor
+    createWindow();
 
-  // No macOS, recria a janela quando o ícone do dock é clicado
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
+    // No macOS, recria a janela quando o ícone do dock é clicado
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  } catch (error) {
+    console.error('[Main] Erro ao iniciar servidor:', error);
+    app.quit();
+  }
 });
 
 // Fecha a aplicação quando todas as janelas forem fechadas (exceto no macOS)
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  await stopServer();
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// Para o servidor ao sair da aplicação
+app.on('before-quit', async () => {
+  await stopServer();
 });
 
 // Tratamento de erros não capturados

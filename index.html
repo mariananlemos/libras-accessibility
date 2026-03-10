@@ -43,15 +43,8 @@
             <div class="avatar-head"></div>
             <div class="avatar-body"></div>
           </div>
-          <p id="vlibras-status">Carregando VLibras...</p>
-        </div>
-        
-        <!-- Widget VLibras (DENTRO da área específica) -->
-        <div vw class="enabled">
-          <div vw-access-button class="active"></div>
-          <div vw-plugin-wrapper>
-            <div class="vw-plugin-top-wrapper"></div>
-          </div>
+          <p id="vlibras-status">Conectando ao VLibras...</p>
+          <p class="vlibras-hint">O avatar aparecerá em uma janela separada</p>
         </div>
       </div>
     </div>
@@ -114,13 +107,8 @@
        SCRIPTS
        ===================================================== -->
   
-  <!-- Widget do VLibras (API oficial do governo) -->
-  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-  
-  <!-- Inicialização do VLibras Widget -->
-  <script>
-    new window.VLibras.Widget('https://vlibras.gov.br/app');
-  </script>
+  <!-- VLibras agora roda em janela Electron separada (vlibras-bridge.html) -->
+  <!-- Isso evita problemas de CSP/Content Security Policy -->
   
   <!-- Script principal do renderer -->
   <script src="renderer.js"></script>

@@ -56,6 +56,46 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('always-on-top-changed', (event, value) => {
       callback(value);
     });
+  },
+
+  // ==================== VLIBRAS API ====================
+
+  /**
+   * Envia texto para tradução no VLibras
+   * @param {string} text - Texto para traduzir
+   */
+  translateToLibras: (text) => {
+    ipcRenderer.send('translate-to-libras', text);
+  },
+
+  /**
+   * Registra callback para quando o VLibras estiver pronto
+   * @param {Function} callback - Função chamada quando VLibras está pronto
+   */
+  onVLibrasReady: (callback) => {
+    ipcRenderer.on('vlibras-ready', (event, data) => {
+      callback(data);
+    });
+  },
+
+  /**
+   * Registra callback para quando uma tradução iniciar
+   * @param {Function} callback - Função chamada com o texto sendo traduzido
+   */
+  onVLibrasTranslating: (callback) => {
+    ipcRenderer.on('vlibras-translating', (event, text) => {
+      callback(text);
+    });
+  },
+
+  /**
+   * Registra callback para erros do VLibras
+   * @param {Function} callback - Função chamada com a mensagem de erro
+   */
+  onVLibrasError: (callback) => {
+    ipcRenderer.on('vlibras-error', (event, error) => {
+      callback(error);
+    });
   }
 });
 
