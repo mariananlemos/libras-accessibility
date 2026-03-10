@@ -152,24 +152,20 @@ function checkBrowserSupport() {
 // ==================== VLIBRAS ====================
 
 /**
- * Inicializa e posiciona o VLibras dentro do wrapper
+ * Inicializa o VLibras (já está no HTML dentro do wrapper)
  */
 function initVLibras() {
   console.log('🔄 Inicializando VLibras...');
   
   const checkVLibras = setInterval(() => {
-    const vwWidget = document.querySelector('[vw]');
-    const vwWrapper = document.querySelector('.vw-plugin-wrapper');
-    const vwAccess = document.querySelector('[vw-access-button]');
+    const vwAccess = document.querySelector('.vlibras-wrapper [vw-access-button]');
+    const vwWrapper = document.querySelector('.vlibras-wrapper .vw-plugin-wrapper');
     
-    if (vwWidget && vwWrapper) {
+    if (vwWrapper && vwAccess) {
       clearInterval(checkVLibras);
       state.vlibrasReady = true;
       
-      // Move o widget VLibras para dentro do nosso wrapper
-      moveVLibrasToWrapper(vwWidget);
-      
-      // Atualiza UI
+      // Esconde o placeholder
       if (elements.vlibrasPlaceholder) {
         elements.vlibrasPlaceholder.classList.add('hidden');
       }
@@ -178,14 +174,12 @@ function initVLibras() {
         elements.vlibrasBadge.classList.add('ready');
       }
       
-      console.log('✅ VLibras carregado e posicionado!');
+      console.log('✅ VLibras carregado!');
       
       // Abre o widget automaticamente
       setTimeout(() => {
-        if (vwAccess) {
-          vwAccess.click();
-          console.log('🎬 VLibras player aberto');
-        }
+        vwAccess.click();
+        console.log('🎬 VLibras player aberto');
       }, 500);
     }
   }, 500);
@@ -203,43 +197,6 @@ function initVLibras() {
       console.error('❌ Timeout ao carregar VLibras');
     }
   }, 15000);
-}
-
-/**
- * Move o widget VLibras para dentro do nosso wrapper
- */
-function moveVLibrasToWrapper(vwWidget) {
-  if (!elements.vlibrasWrapper || !vwWidget) return;
-  
-  try {
-    // Clona o widget para o nosso container
-    elements.vlibrasWrapper.appendChild(vwWidget);
-    
-    // Aplica estilos para ficar no container
-    vwWidget.style.position = 'relative';
-    vwWidget.style.width = '100%';
-    vwWidget.style.height = '100%';
-    
-    // Ajusta o wrapper do plugin
-    const pluginWrapper = vwWidget.querySelector('.vw-plugin-wrapper');
-    if (pluginWrapper) {
-      pluginWrapper.style.position = 'relative';
-      pluginWrapper.style.width = '100%';
-      pluginWrapper.style.height = '100%';
-      pluginWrapper.style.bottom = 'auto';
-      pluginWrapper.style.right = 'auto';
-    }
-    
-    // Esconde o botão de acesso flutuante (usamos nosso próprio)
-    const accessBtn = vwWidget.querySelector('[vw-access-button]');
-    if (accessBtn) {
-      accessBtn.style.display = 'none';
-    }
-    
-    console.log('📍 VLibras movido para o wrapper');
-  } catch (e) {
-    console.error('Erro ao mover VLibras:', e);
-  }
 }
 
 /**

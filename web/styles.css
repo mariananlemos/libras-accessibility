@@ -602,32 +602,29 @@ body {
 }
 
 /* ==================== VLIBRAS WIDGET OVERRIDE ==================== */
-/* Esconde o botão flutuante padrão do VLibras */
-[vw-access-button] {
+/* Contém o VLibras dentro do nosso wrapper */
+.vlibras-wrapper [vw] {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Esconde o botão de acesso flutuante (abrimos automaticamente) */
+.vlibras-wrapper [vw-access-button] {
   display: none !important;
 }
 
-/* Move o player para dentro da nossa área */
-.vlibras-wrapper .vw-plugin-wrapper,
-.vlibras-tile .vw-plugin-wrapper {
+/* Contém o plugin wrapper dentro da nossa área */
+.vlibras-wrapper .vw-plugin-wrapper {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: 60px !important;
+  bottom: 0 !important;
   width: 100% !important;
-  height: calc(100% - 60px) !important;
+  height: 100% !important;
   transform: none !important;
-}
-
-/* O wrapper global fica escondido */
-body > [vw].enabled > .vw-plugin-wrapper {
-  position: fixed !important;
-  bottom: 100px !important;
-  right: 20px !important;
-  width: 400px !important;
-  height: 500px !important;
-  z-index: 9999 !important;
+  z-index: 1 !important;
 }
 
 /* ==================== HIDDEN HELPER ==================== */

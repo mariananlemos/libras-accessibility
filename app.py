@@ -87,7 +87,7 @@ def health():
     return jsonify({"status": "ok", "whisper": "loaded"})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 3000))
     print(f"""
 🤟 ═══════════════════════════════════════════════════
    LIBRAS ACCESSIBILITY - Servidor com Whisper

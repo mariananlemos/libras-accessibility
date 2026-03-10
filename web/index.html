@@ -81,6 +81,14 @@
         <!-- AVATAR VLIBRAS (intérprete virtual) -->
         <div class="video-tile vlibras-tile">
           <div class="vlibras-wrapper" id="vlibras-wrapper">
+            <!-- VLibras Widget renderiza aqui dentro -->
+            <div vw class="enabled">
+              <div vw-access-button class="active"></div>
+              <div vw-plugin-wrapper>
+                <div class="vw-plugin-top-wrapper"></div>
+              </div>
+            </div>
+            
             <div class="vlibras-placeholder" id="vlibras-placeholder">
               <div class="avatar-silhouette">
                 <div class="avatar-head"></div>
@@ -160,15 +168,7 @@
     
   </div>
 
-  <!-- WIDGET VLIBRAS OFICIAL -->
-  <div vw class="enabled">
-    <div vw-access-button class="active"></div>
-    <div vw-plugin-wrapper>
-      <div class="vw-plugin-top-wrapper"></div>
-    </div>
-  </div>
-  
-  <!-- Script do VLibras -->
+  <!-- Script do VLibras (CDN oficial) -->
   <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
   <script>
     new window.VLibras.Widget('https://vlibras.gov.br/app');
