@@ -25,6 +25,22 @@ const FLASK_PORT = process.env.FLASK_PORT || 5000;
  */
 function startServer() {
   return new Promise((resolve, reject) => {
+    // CSP que permite carregar o VLibras de vlibras.gov.br
+    app.use((req, res, next) => {
+      res.setHeader('Content-Security-Policy', [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vlibras.gov.br",
+        "style-src 'self' 'unsafe-inline'",
+        "connect-src 'self' https://vlibras.gov.br wss://vlibras.gov.br ws://vlibras.gov.br",
+        "frame-src 'self' https://vlibras.gov.br",
+        "img-src 'self' https://vlibras.gov.br data: blob:",
+        "media-src 'self' blob: mediastream:",
+        "worker-src 'self' blob:",
+        "font-src 'self' https://vlibras.gov.br data:"
+      ].join('; '));
+      next();
+    });
+
     // Proxy para rota de transcrição -> Flask backend
     app.use('/transcribe', createProxyMiddleware({
       target: `http://localhost:${FLASK_PORT}`,

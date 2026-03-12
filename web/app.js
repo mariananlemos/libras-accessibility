@@ -13,7 +13,8 @@
 
 const CONFIG = {
   whisperEndpoint: '/transcribe',
-  recordingInterval: 3000, // Grava em chunks de 3 segundos
+  recordingInterval: 5000, // Grava em chunks de 5 segundos
+  whisperTimeout: 30000,   // Timeout de 30s para o Whisper
   mediaConstraints: {
     video: {
       width: { ideal: 1280 },
@@ -89,8 +90,17 @@ const state = {
   
   // VLibras
   vlibrasReady: false,
+  vlibrasWidget: null,
   librasEnabled: true,
   lastTranslatedText: '',
+  vlibrasQueue: [],
+  
+  // Web Speech API
+  speechRecognition: null,
+  useSpeechAPI: false,
+  
+  // Whisper
+  isSendingToWhisper: false,
   
   // Reunião
   meetingStartTime: null,
@@ -145,48 +155,143 @@ function checkBrowserSupport() {
     console.warn('MediaRecorder não suportado.');
   }
   
+  // Inicializa Web Speech API (legendas em tempo real)
+  initSpeechRecognition();
+  
   // Inicia verificação do VLibras
   initVLibras();
+}
+
+// ==================== WEB SPEECH API ====================
+
+/**
+ * Inicializa o reconhecimento de voz via Web Speech API (tempo real)
+ * Fallback: Whisper via backend Flask
+ */
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  if (!SpeechRecognition) {
+    console.warn('⚠️ Web Speech API não suportada. Usando apenas Whisper.');
+    state.useSpeechAPI = false;
+    return;
+  }
+  
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+  
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    let finalTranscript = '';
+    
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+    
+    // Mostra texto provisório (enquanto fala)
+    if (interimTranscript && elements.captionInterim) {
+      elements.captionInterim.textContent = interimTranscript;
+    }
+    
+    // Texto final confirmado
+    if (finalTranscript) {
+      processTranscript(finalTranscript);
+    }
+  };
+  
+  recognition.onerror = (event) => {
+    console.error('❌ Erro no reconhecimento de voz:', event.error);
+    if (event.error === 'not-allowed') {
+      updateStatus('error', 'Microfone não permitido');
+    } else if (event.error === 'no-speech') {
+      // Silêncio — não é erro crítico
+    } else if (event.error === 'network') {
+      console.warn('⚠️ Speech API indisponível, alternando para Whisper');
+      state.useSpeechAPI = false;
+      if (state.isRecording) {
+        startWhisperRecording();
+      }
+    }
+  };
+  
+  recognition.onend = () => {
+    // Reinicia automaticamente se ainda estiver gravando
+    if (state.isRecording && state.useSpeechAPI) {
+      try {
+        recognition.start();
+      } catch (e) {
+        console.warn('Erro ao reiniciar Speech API:', e);
+      }
+    }
+  };
+  
+  state.speechRecognition = recognition;
+  state.useSpeechAPI = true;
+  console.log('✅ Web Speech API inicializada (pt-BR)');
 }
 
 // ==================== VLIBRAS ====================
 
 /**
- * Inicializa o VLibras (já está no HTML dentro do wrapper)
+ * Inicializa o VLibras com polling robusto
+ * Verifica DOM + iframe + widget API antes de marcar como pronto
  */
 function initVLibras() {
   console.log('🔄 Inicializando VLibras...');
   
-  const checkVLibras = setInterval(() => {
-    const vwAccess = document.querySelector('.vlibras-wrapper [vw-access-button]');
-    const vwWrapper = document.querySelector('.vlibras-wrapper .vw-plugin-wrapper');
-    
-    if (vwWrapper && vwAccess) {
-      clearInterval(checkVLibras);
-      state.vlibrasReady = true;
-      
-      // Esconde o placeholder
-      if (elements.vlibrasPlaceholder) {
-        elements.vlibrasPlaceholder.classList.add('hidden');
-      }
-      if (elements.vlibrasBadge) {
-        elements.vlibrasBadge.textContent = 'Pronto ✅';
-        elements.vlibrasBadge.classList.add('ready');
-      }
-      
-      console.log('✅ VLibras carregado!');
-      
-      // Abre o widget automaticamente
-      setTimeout(() => {
-        vwAccess.click();
-        console.log('🎬 VLibras player aberto');
-      }, 500);
-    }
-  }, 500);
+  let attempts = 0;
+  const maxAttempts = 60; // 30 seconds
   
-  // Timeout após 15 segundos
-  setTimeout(() => {
-    if (!state.vlibrasReady) {
+  const checkVLibras = setInterval(() => {
+    attempts++;
+    
+    // Fase 1: Verifica se os elementos DOM do VLibras existem
+    const vwAccess = document.querySelector('[vw-access-button]');
+    const vwPlugin = document.querySelector('[vw-plugin-wrapper]');
+    
+    if (vwPlugin && vwAccess) {
+      // Fase 2: Verifica se o iframe do player foi criado e carregou
+      const vwIframe = vwPlugin.querySelector('iframe');
+      const widgetReady = vwIframe && vwIframe.contentWindow;
+      
+      if (widgetReady) {
+        clearInterval(checkVLibras);
+        state.vlibrasReady = true;
+        
+        if (elements.vlibrasPlaceholder) {
+          elements.vlibrasPlaceholder.classList.add('hidden');
+        }
+        if (elements.vlibrasBadge) {
+          elements.vlibrasBadge.textContent = 'Pronto ✅';
+          elements.vlibrasBadge.classList.add('ready');
+        }
+        
+        console.log('✅ VLibras carregado e pronto!');
+        
+        // Abre o widget automaticamente
+        setTimeout(() => {
+          try {
+            vwAccess.click();
+            console.log('🎬 VLibras player aberto');
+          } catch (e) {
+            console.warn('Não foi possível abrir VLibras automaticamente:', e);
+          }
+          
+          // Processa textos que ficaram na fila enquanto o VLibras carregava
+          flushVLibrasQueue();
+        }, 1000);
+      }
+    }
+    
+    if (attempts >= maxAttempts && !state.vlibrasReady) {
       clearInterval(checkVLibras);
       if (elements.vlibrasLoadingText) {
         elements.vlibrasLoadingText.textContent = 'VLibras não disponível';
@@ -196,24 +301,65 @@ function initVLibras() {
       }
       console.error('❌ Timeout ao carregar VLibras');
     }
-  }, 15000);
+  }, 500);
+}
+
+/**
+ * Processa a fila de textos pendentes após o VLibras ficar pronto
+ */
+function flushVLibrasQueue() {
+  if (state.vlibrasQueue.length === 0) return;
+  
+  // Envia apenas o último texto da fila (mais relevante)
+  const lastText = state.vlibrasQueue[state.vlibrasQueue.length - 1];
+  state.vlibrasQueue = [];
+  
+  console.log('📤 Enviando texto da fila para VLibras:', lastText);
+  sendToVLibras(lastText);
 }
 
 /**
  * Envia texto para tradução no VLibras
+ * Se o widget ainda não estiver pronto, enfileira o texto
  */
 function translateToLibras(text) {
-  if (!state.vlibrasReady || !state.librasEnabled || !text) return;
+  if (!state.librasEnabled || !text) return;
   if (text === state.lastTranslatedText) return;
   
   state.lastTranslatedText = text;
+  
+  if (!state.vlibrasReady) {
+    state.vlibrasQueue.push(text);
+    console.log('🤟 VLibras não pronto, texto na fila:', text);
+    return;
+  }
+  
+  sendToVLibras(text);
+}
+
+/**
+ * Envia texto efetivamente para o widget VLibras
+ * Tenta múltiplas abordagens: textarea + botão, Enter, postMessage
+ */
+function sendToVLibras(text) {
   console.log('🤟 Traduzindo para Libras:', text);
   
   try {
-    // Encontra o campo de texto do VLibras
-    const textArea = document.querySelector('.vw-plugin-wrapper textarea, .vw-text-input, .vp-input');
-    const textInput = document.querySelector('.vw-plugin-wrapper input[type="text"]');
-    const inputField = textArea || textInput;
+    // Busca campo de texto do VLibras (seletores globais)
+    const selectors = [
+      '[vw-plugin-wrapper] textarea',
+      '[vw-plugin-wrapper] input[type="text"]',
+      '.vw-plugin-wrapper textarea',
+      '.vw-plugin-wrapper input[type="text"]',
+      '.vw-text-input',
+      '.vp-input'
+    ];
+    
+    let inputField = null;
+    for (const sel of selectors) {
+      inputField = document.querySelector(sel);
+      if (inputField) break;
+    }
     
     if (inputField) {
       inputField.value = text;
@@ -222,21 +368,52 @@ function translateToLibras(text) {
       
       // Procura e clica no botão de traduzir
       setTimeout(() => {
-        const translateBtn = document.querySelector(
-          '.vw-btn-send, .vw-send, .vp-play, [title="Traduzir"], button[type="submit"]'
-        );
+        const btnSelectors = [
+          '[vw-plugin-wrapper] .vw-btn-send',
+          '.vw-plugin-wrapper .vw-btn-send',
+          '[vw-plugin-wrapper] button',
+          '.vw-btn-send',
+          '.vw-send',
+          '.vp-play',
+          '[title="Traduzir"]',
+          'button[type="submit"]'
+        ];
+        
+        let translateBtn = null;
+        for (const sel of btnSelectors) {
+          translateBtn = document.querySelector(sel);
+          if (translateBtn) break;
+        }
+        
         if (translateBtn) {
           translateBtn.click();
           console.log('✅ Texto enviado para VLibras');
         } else {
-          // Tenta Enter
+          // Fallback: tenta Enter
           inputField.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
           }));
+          inputField.dispatchEvent(new KeyboardEvent('keypress', {
+            key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
+          }));
+          inputField.dispatchEvent(new KeyboardEvent('keyup', {
+            key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
+          }));
+          console.log('⌨️ Texto enviado via Enter');
         }
-      }, 200);
+      }, 300);
     } else {
-      console.log('⚠️ Campo de entrada do VLibras não encontrado');
+      // Fallback: tenta postMessage para o iframe do VLibras
+      const vwIframe = document.querySelector('[vw-plugin-wrapper] iframe');
+      if (vwIframe && vwIframe.contentWindow) {
+        vwIframe.contentWindow.postMessage({
+          type: 'translate',
+          text: text
+        }, '*');
+        console.log('📨 Texto enviado via postMessage para iframe VLibras');
+      } else {
+        console.warn('⚠️ Campo de entrada e iframe do VLibras não encontrados');
+      }
     }
   } catch (e) {
     console.error('Erro ao traduzir:', e);
@@ -434,10 +611,10 @@ function clearCaptions() {
   }
 }
 
-// ==================== GRAVAÇÃO + WHISPER ====================
+// ==================== GRAVAÇÃO + TRANSCRIÇÃO ====================
 
 /**
- * Inicia gravação de áudio para enviar ao Whisper
+ * Inicia transcrição: Web Speech API (tempo real) ou Whisper (backend)
  */
 function startRecording() {
   if (!state.localStream) {
@@ -445,6 +622,30 @@ function startRecording() {
     return;
   }
   
+  state.isRecording = true;
+  updateTranscriptionUI();
+  
+  // Tenta Web Speech API primeiro (legendas em tempo real, sem backend)
+  if (state.useSpeechAPI && state.speechRecognition) {
+    try {
+      state.speechRecognition.start();
+      updateStatus('listening', 'Ouvindo (Speech API)...');
+      console.log('🎙️ Transcrição iniciada via Web Speech API (pt-BR)');
+      return;
+    } catch (e) {
+      console.warn('⚠️ Falha ao iniciar Speech API, tentando Whisper:', e);
+      state.useSpeechAPI = false;
+    }
+  }
+  
+  // Fallback: Whisper via backend Flask
+  startWhisperRecording();
+}
+
+/**
+ * Inicia gravação para envio ao Whisper (fallback)
+ */
+function startWhisperRecording() {
   console.log('🎙️ Iniciando gravação para Whisper...');
   
   // Pega apenas as tracks de áudio
@@ -479,22 +680,31 @@ function startRecording() {
     }
   };
   
-  state.mediaRecorder.onstop = async () => {
-    if (state.audioChunks.length > 0) {
-      await sendToWhisper();
+  state.mediaRecorder.onstop = () => {
+    // Captura chunks atuais e reseta para próxima gravação
+    const chunksToSend = [...state.audioChunks];
+    state.audioChunks = [];
+    
+    // Envia para Whisper (sem bloquear a próxima gravação)
+    if (chunksToSend.length > 0) {
+      sendToWhisper(chunksToSend);
     }
     
-    // Continua gravando se ainda estiver ativo
-    if (state.isRecording) {
-      state.audioChunks = [];
-      state.mediaRecorder.start();
-      
-      // Para após o intervalo configurado
-      setTimeout(() => {
-        if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
-          state.mediaRecorder.stop();
-        }
-      }, CONFIG.recordingInterval);
+    // Reinicia gravação imediatamente se ainda ativo
+    if (state.isRecording && state.mediaRecorder) {
+      try {
+        state.mediaRecorder.start();
+        setTimeout(() => {
+          if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+            state.mediaRecorder.stop();
+          }
+        }, CONFIG.recordingInterval);
+      } catch (e) {
+        console.error('Erro ao reiniciar gravação:', e);
+        state.isRecording = false;
+        updateTranscriptionUI();
+        updateStatus('error', 'Erro na gravação');
+      }
     }
   };
   
@@ -517,13 +727,23 @@ function startRecording() {
 }
 
 /**
- * Para a gravação
+ * Para a gravação (Speech API ou Whisper)
  */
 function stopRecording() {
-  console.log('⏹️ Parando gravação...');
+  console.log('⏹️ Parando transcrição...');
   
   state.isRecording = false;
   
+  // Para Web Speech API
+  if (state.speechRecognition) {
+    try {
+      state.speechRecognition.stop();
+    } catch (e) {
+      // Pode já estar parado
+    }
+  }
+  
+  // Para Whisper MediaRecorder
   if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
     state.mediaRecorder.stop();
   }
@@ -535,12 +755,17 @@ function stopRecording() {
 /**
  * Envia áudio para o backend Whisper
  */
-async function sendToWhisper() {
-  if (state.audioChunks.length === 0) return;
+async function sendToWhisper(chunks) {
+  if (!chunks || chunks.length === 0) return;
   
-  const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
+  // Evita requisições concorrentes
+  if (state.isSendingToWhisper) {
+    console.log('⏭️ Já há uma transcrição em andamento, ignorando chunk...');
+    return;
+  }
   
-  // Verifica se o blob tem tamanho suficiente (evita enviar silêncio)
+  const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+  
   if (audioBlob.size < 1000) {
     console.log('⏭️ Áudio muito curto, ignorando...');
     return;
@@ -548,33 +773,73 @@ async function sendToWhisper() {
   
   console.log(`📤 Enviando ${(audioBlob.size / 1024).toFixed(1)}KB para Whisper...`);
   
-  // Mostra indicador de processamento
   if (elements.captionInterim) {
     elements.captionInterim.textContent = '🔄 Processando...';
   }
   
+  state.isSendingToWhisper = true;
+  
   const formData = new FormData();
   formData.append('audio', audioBlob, 'audio.webm');
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CONFIG.whisperTimeout);
   
   try {
     const response = await fetch(CONFIG.whisperEndpoint, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`Servidor retornou status ${response.status}`);
+    }
     
     const result = await response.json();
     
-    if (result.success && result.text) {
+    if (result.success && result.text && result.text.trim()) {
       processTranscript(result.text);
     } else if (result.error) {
       console.error('Erro do Whisper:', result.error);
+      if (elements.captionInterim) {
+        elements.captionInterim.textContent = '';
+      }
+    } else {
+      // Whisper retornou vazio (silêncio)
+      if (elements.captionInterim) {
+        elements.captionInterim.textContent = '';
+      }
     }
     
   } catch (error) {
-    console.error('Erro ao enviar para Whisper:', error);
-    if (elements.captionInterim) {
-      elements.captionInterim.textContent = '❌ Erro de conexão com servidor';
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      console.error('⏱️ Timeout na transcrição');
+      if (elements.captionInterim) {
+        elements.captionInterim.textContent = '⏱️ Timeout - tentando novamente...';
+      }
+    } else {
+      console.error('Erro ao enviar para Whisper:', error);
+      if (elements.captionInterim) {
+        elements.captionInterim.textContent = '❌ Erro de conexão com servidor';
+      }
     }
+  } finally {
+    state.isSendingToWhisper = false;
+    
+    // Limpa mensagem de processamento após 3s se ainda estiver visível
+    setTimeout(() => {
+      if (elements.captionInterim && 
+          (elements.captionInterim.textContent === '🔄 Processando...' ||
+           elements.captionInterim.textContent.startsWith('⏱️') ||
+           elements.captionInterim.textContent.startsWith('❌'))) {
+        elements.captionInterim.textContent = '';
+      }
+    }, 3000);
   }
 }
 
