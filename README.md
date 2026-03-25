@@ -1,90 +1,86 @@
-# 🤟 Libras Accessibility
+# Libras Accessibility
 
-Real-time speech-to-Libras (Brazilian Sign Language) translator using VLibras and Whisper.
+Accessible meeting interface with live speech captions and VLibras integration.
 
-![Electron](https://img.shields.io/badge/Electron-28.0.0-47848F?logo=electron)
-![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)
-![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python)
-![License](https://img.shields.io/badge/License-MIT-green)
+## What this project does
 
-## Features
+- Captures microphone audio in the browser
+- Generates live captions in Portuguese
+- Integrates the official VLibras plugin for Libras interaction
+- Supports both local development and Vercel deployment
 
-- 🎤 Real-time speech transcription (OpenAI Whisper)
-- 🤟 Libras translation via VLibras (Brazilian government tool)
-- 📹 Video meeting room with camera/microphone
-- 📝 Live captions
+## Runtime modes
 
-## Quick Start
+### Local mode (Flask + Whisper)
 
-### 1. Install dependencies
+Use this mode when running everything on your machine.
+
+1. Install dependencies:
 
 ```bash
-# Node.js dependencies
 npm install
-
-# Python dependencies (for Whisper transcription)
 pip install -r requirements.txt
 ```
 
-### 2. Start the backend (Whisper)
+2. Start Python backend:
 
 ```bash
 python app.py
-# Runs on http://localhost:5000
 ```
 
-### 3a. Web Version (Codespaces / Browser)
+3. Start web server:
 
 ```bash
 npm run web
-# Open http://localhost:3000
 ```
 
-### 3b. Desktop Version (Electron)
+4. Open:
+
+```text
+http://localhost:3000
+```
+
+In local mode, transcription requests go to `/transcribe`.
+
+### Production mode (Vercel)
+
+In Vercel, the app uses a serverless transcription endpoint at `api/transcribe.js`.
+
+1. Import this repository into Vercel
+2. Add environment variable:
 
 ```bash
-npm start
+OPENAI_API_KEY=your_key_here
 ```
 
-## Deploy no Vercel
+3. Deploy
 
-A versao atual com `app.py` (Whisper local) **nao** e adequada para Vercel por depender de `torch` e modelo local pesado.
+In production, the frontend automatically uses `/api/transcribe`.
 
-Este repositorio agora inclui uma funcao serverless em `api/transcribe.js` que usa a API da OpenAI para transcricao.
+## Main files
 
-### Passos
+- `web/index.html`: Meeting UI
+- `web/styles.css`: Layout and responsive styles
+- `web/app.js`: Client logic (media, captions, controls)
+- `api/transcribe.js`: Serverless transcription endpoint (Vercel)
+- `app.py`: Local Flask backend with Whisper
+- `vercel.json`: Vercel routing/build config
+- `.vercelignore`: Excludes local-only files from Vercel upload
 
-1. Crie uma conta/projeto no Vercel e importe este repositorio.
-2. Em **Project Settings > Environment Variables**, adicione:
+## Notes
 
-```bash
-OPENAI_API_KEY=seu_token_aqui
-```
+- Do not commit secrets. Keep keys in `.env.local` and Vercel environment variables.
+- `.env.local` is ignored by Git.
+- Use `.env.example` as reference.
 
-3. Faça o deploy.
+## Tech stack
 
-Pronto: o frontend em `web/` sera servido e a transcricao sera feita via `/api/transcribe`.
-
-### Observacoes
-
-- Localmente (`localhost`), o app continua usando `/transcribe` (Flask + Whisper local).
-- Em producao (Vercel), o app usa automaticamente `/api/transcribe`.
-
-## Tech Stack
-
-- **Electron** - Desktop app
-- **Express** - Local web server
-- **Flask** - Python backend for Whisper
-- **OpenAI Whisper** - Speech recognition
-- **VLibras** - Official Libras translator (gov.br)
-
-## How it works
-
-1. Audio is captured from microphone via WebRTC
-2. Audio chunks are sent to Flask backend every 3 seconds
-3. Whisper transcribes audio to text
-4. Text is displayed as captions
-5. VLibras translates text to Libras (sign language)
+- Frontend: HTML, CSS, JavaScript
+- Local backend: Flask + openai-whisper + torch
+- Web server: Express
+- Desktop shell: Electron
+- Cloud deploy: Vercel (Node serverless function)
+- Accessibility integration: VLibras
 
 ## License
 
