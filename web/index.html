@@ -78,37 +78,22 @@
           </div>
         </div>
         
-        <!-- AVATAR VLIBRAS (intérprete virtual) -->
-        <div class="video-tile vlibras-tile">
-          <div class="vlibras-wrapper" id="vlibras-wrapper">
-            <div class="vlibras-placeholder" id="vlibras-placeholder">
-              <div class="avatar-silhouette">
-                <div class="avatar-head"></div>
-                <div class="avatar-body"></div>
-              </div>
-              <p id="vlibras-loading-text">Carregando intérprete...</p>
-            </div>
-          </div>
-          <div class="video-overlay">
-            <span class="participant-name">🤟 Intérprete de Libras</span>
-            <span class="vlibras-badge" id="vlibras-badge">Carregando</span>
-          </div>
-        </div>
-        
       </section>
 
       <!-- PAINEL DE LEGENDA/TRANSCRIÇÃO -->
       <section class="captions-panel">
         <div class="captions-header">
-          <span>📝 Legendas em tempo real</span>
+          <span>📝 Closed Caption</span>
           <div class="captions-actions">
             <button id="btn-clear-captions" class="btn-icon-small" title="Limpar legendas">🗑️</button>
           </div>
         </div>
         <div class="captions-content" id="captions-content">
-          <p class="caption-text" id="caption-text">
-            As legendas aparecerão aqui quando você começar a falar...
-          </p>
+          <div class="caption-lines" id="caption-lines">
+            <p class="caption-text caption-placeholder" id="caption-text">
+              As legendas aparecerão aqui quando você começar a falar...
+            </p>
+          </div>
           <p class="caption-interim" id="caption-interim"></p>
         </div>
       </section>

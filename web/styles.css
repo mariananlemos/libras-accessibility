@@ -52,7 +52,6 @@
 
 html, body {
   height: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -188,7 +187,8 @@ body {
 .meeting-room {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .meeting-room.hidden {
@@ -248,14 +248,15 @@ body {
   flex-direction: column;
   padding: var(--spacing);
   gap: var(--spacing);
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* ==================== GRID DE VÍDEO ==================== */
 .video-grid {
-  flex: 1;
+  flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--spacing);
   min-height: 0;
 }
@@ -276,7 +277,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
+  min-height: 300px;
+  max-height: min(52vh, 460px);
 }
 
 .video-tile video {
@@ -367,74 +369,15 @@ body {
 }
 
 /* ==================== ÁREA DO VLIBRAS ==================== */
-.vlibras-tile {
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-}
-
-.vlibras-wrapper {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.vlibras-placeholder {
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.vlibras-placeholder.hidden {
-  display: none;
-}
-
-.avatar-silhouette {
-  margin: 0 auto 16px;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-.avatar-head {
-  width: 60px;
-  height: 60px;
-  background: var(--bg-hover);
-  border-radius: 50%;
-  margin: 0 auto 8px;
-}
-
-.avatar-body {
-  width: 80px;
-  height: 100px;
-  background: var(--bg-hover);
-  border-radius: 40px 40px 20px 20px;
-  margin: 0 auto;
-}
-
-.vlibras-badge {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: var(--bg-hover);
-  color: var(--text-muted);
-}
-
-.vlibras-badge.ready {
-  background: rgba(0, 200, 83, 0.15);
-  color: var(--accent-green);
-}
-
 /* ==================== PAINEL DE LEGENDAS ==================== */
 .captions-panel {
-  background: var(--bg-card);
+  background: #090a0fcc;
+  backdrop-filter: blur(6px);
   border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   overflow: hidden;
-  max-height: 180px;
+  max-height: 230px;
+  min-height: 170px;
   display: flex;
   flex-direction: column;
 }
@@ -444,10 +387,12 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .captions-actions {
@@ -470,23 +415,44 @@ body {
 }
 
 .captions-content {
-  padding: 16px;
+  padding: 12px 16px 14px;
   flex: 1;
   overflow-y: auto;
 }
 
+.caption-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .caption-text {
+  font-size: 20px;
+  line-height: 1.45;
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+}
+
+.caption-text.caption-line {
+  background: rgba(0, 0, 0, 0.72);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.caption-text.caption-placeholder {
   font-size: 16px;
-  line-height: 1.6;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
 }
 
 .caption-interim {
-  font-size: 15px;
-  color: var(--accent-blue);
-  font-style: italic;
+  font-size: 18px;
+  color: #9dc4ff;
+  font-style: normal;
   margin-top: 8px;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 /* ==================== BARRA DE CONTROLES ==================== */
@@ -494,10 +460,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 16px;
   padding: 16px 24px;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
 }
 
 .control-group {
@@ -634,8 +604,13 @@ body {
   }
   
   .meeting-controls {
-    gap: 10px;
-    padding: 12px 16px;
+    gap: 8px;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    justify-content: space-between;
+  }
+
+  .control-group {
+    flex: 1 1 22%;
   }
   
   .control-btn {
@@ -656,10 +631,20 @@ body {
   }
   
   .captions-panel {
-    max-height: 120px;
+    max-height: 180px;
+    min-height: 140px;
+  }
+
+  .caption-text {
+    font-size: 16px;
+  }
+
+  .caption-interim {
+    font-size: 15px;
   }
   
   .video-tile {
-    min-height: 180px;
+    min-height: 190px;
+    max-height: 42vh;
   }
 }

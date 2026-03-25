@@ -66,6 +66,7 @@ const elements = {
   
   // Legendas
   captionText: document.getElementById('caption-text'),
+  captionLines: document.getElementById('caption-lines'),
   captionInterim: document.getElementById('caption-interim'),
   captionsContent: document.getElementById('captions-content'),
   btnClearCaptions: document.getElementById('btn-clear-captions')
@@ -105,6 +106,7 @@ const state = {
   // Reunião
   meetingStartTime: null,
   meetingTimer: null,
+  captionHistory: [],
   
   // Áudio analyzer
   audioContext: null,
@@ -503,6 +505,11 @@ function enterMeetingRoom() {
   setupAudioAnalyser();
   
   updateStatus('idle', 'Pronto - Clique em Transcrição');
+  setTimeout(() => {
+    if (!state.isRecording) {
+      startRecording();
+    }
+  }, 600);
   
   console.log('✅ Sala de reunião iniciada!');
 }
@@ -603,8 +610,15 @@ function toggleLibras() {
 }
 
 function clearCaptions() {
-  if (elements.captionText) {
-    elements.captionText.textContent = 'As legendas aparecerão aqui...';
+  state.captionHistory = [];
+  if (elements.captionLines) {
+    elements.captionLines.innerHTML = '';
+    const placeholder = document.createElement('p');
+    placeholder.id = 'caption-text';
+    placeholder.className = 'caption-text caption-placeholder';
+    placeholder.textContent = 'As legendas aparecerão aqui quando você começar a falar...';
+    elements.captionLines.appendChild(placeholder);
+    elements.captionText = placeholder;
   }
   if (elements.captionInterim) {
     elements.captionInterim.textContent = '';
@@ -852,10 +866,12 @@ function processTranscript(text) {
   
   console.log('📝 Transcrito:', cleanText);
   
-  // Atualiza legenda principal
-  if (elements.captionText) {
-    elements.captionText.textContent = cleanText;
+  state.captionHistory.push(cleanText);
+  if (state.captionHistory.length > 3) {
+    state.captionHistory.shift();
   }
+
+  renderCaptionLines();
   
   // Limpa texto provisório
   if (elements.captionInterim) {
@@ -869,6 +885,29 @@ function processTranscript(text) {
   
   // Envia para VLibras
   translateToLibras(cleanText);
+}
+
+function renderCaptionLines() {
+  if (!elements.captionLines) return;
+
+  elements.captionLines.innerHTML = '';
+
+  if (state.captionHistory.length === 0) {
+    const placeholder = document.createElement('p');
+    placeholder.id = 'caption-text';
+    placeholder.className = 'caption-text caption-placeholder';
+    placeholder.textContent = 'As legendas aparecerão aqui quando você começar a falar...';
+    elements.captionLines.appendChild(placeholder);
+    elements.captionText = placeholder;
+    return;
+  }
+
+  state.captionHistory.forEach((line) => {
+    const captionLine = document.createElement('p');
+    captionLine.className = 'caption-text caption-line';
+    captionLine.textContent = line;
+    elements.captionLines.appendChild(captionLine);
+  });
 }
 
 function updateTranscriptionUI() {
