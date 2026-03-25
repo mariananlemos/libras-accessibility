@@ -46,6 +46,30 @@ npm run web
 npm start
 ```
 
+## Deploy no Vercel
+
+A versao atual com `app.py` (Whisper local) **nao** e adequada para Vercel por depender de `torch` e modelo local pesado.
+
+Este repositorio agora inclui uma funcao serverless em `api/transcribe.js` que usa a API da OpenAI para transcricao.
+
+### Passos
+
+1. Crie uma conta/projeto no Vercel e importe este repositorio.
+2. Em **Project Settings > Environment Variables**, adicione:
+
+```bash
+OPENAI_API_KEY=seu_token_aqui
+```
+
+3. Faça o deploy.
+
+Pronto: o frontend em `web/` sera servido e a transcricao sera feita via `/api/transcribe`.
+
+### Observacoes
+
+- Localmente (`localhost`), o app continua usando `/transcribe` (Flask + Whisper local).
+- Em producao (Vercel), o app usa automaticamente `/api/transcribe`.
+
 ## Tech Stack
 
 - **Electron** - Desktop app

@@ -12,7 +12,7 @@
 // ==================== CONFIGURAÇÃO ====================
 
 const CONFIG = {
-  whisperEndpoint: '/transcribe',
+  whisperEndpoint: window.location.hostname === 'localhost' ? '/transcribe' : '/api/transcribe',
   recordingInterval: 5000, // Grava em chunks de 5 segundos
   whisperTimeout: 30000,   // Timeout de 30s para o Whisper
   mediaConstraints: {
