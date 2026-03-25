@@ -1,0 +1,20 @@
+# Excluir backend local Python do deploy no Vercel
+app.py
+requirements.txt
+*.py
+
+# Ambiente local
+.venv/
+__pycache__/
+*.pyc
+
+# Desktop/Electron (nao usados no deploy web)
+main.js
+preload.js
+renderer.js
+server.js
+server-standalone.js
+assets/
+
+# Outros
+node_modules/
