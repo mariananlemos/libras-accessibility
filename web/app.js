@@ -52,7 +52,6 @@ const elements = {
   btnMic: document.getElementById('btn-mic'),
   btnCamera: document.getElementById('btn-camera'),
   btnTranscription: document.getElementById('btn-transcription'),
-  btnLibras: document.getElementById('btn-libras'),
   
   // Status
   statusDot: document.getElementById('status-dot'),
@@ -92,7 +91,7 @@ const state = {
   // VLibras
   vlibrasReady: false,
   vlibrasWidget: null,
-  librasEnabled: true,
+  librasEnabled: false,
   lastTranslatedText: '',
   vlibrasQueue: [],
   
@@ -136,7 +135,6 @@ function initEventListeners() {
   if (elements.btnMic) elements.btnMic.addEventListener('click', toggleMic);
   if (elements.btnCamera) elements.btnCamera.addEventListener('click', toggleCamera);
   if (elements.btnTranscription) elements.btnTranscription.addEventListener('click', toggleTranscription);
-  if (elements.btnLibras) elements.btnLibras.addEventListener('click', toggleLibras);
   if (elements.btnLeave) elements.btnLeave.addEventListener('click', leaveMeeting);
   if (elements.btnClearCaptions) elements.btnClearCaptions.addEventListener('click', clearCaptions);
 }
@@ -574,7 +572,7 @@ function toggleMic() {
   
   elements.btnMic.classList.toggle('mic-on', state.micEnabled);
   elements.btnMic.classList.toggle('mic-off', !state.micEnabled);
-  elements.btnMic.querySelector('.control-icon').textContent = state.micEnabled ? '🎤' : '🔇';
+  elements.btnMic.title = state.micEnabled ? 'Desligar microfone' : 'Ligar microfone';
   
   console.log(`🎤 Microfone: ${state.micEnabled ? 'ligado' : 'desligado'}`);
 }
@@ -590,6 +588,7 @@ function toggleCamera() {
   
   elements.btnCamera.classList.toggle('camera-on', state.cameraEnabled);
   elements.btnCamera.classList.toggle('camera-off', !state.cameraEnabled);
+  elements.btnCamera.title = state.cameraEnabled ? 'Desligar câmera' : 'Ligar câmera';
   elements.videoOffPlaceholder?.classList.toggle('visible', !state.cameraEnabled);
   
   console.log(`📷 Câmera: ${state.cameraEnabled ? 'ligada' : 'desligada'}`);
@@ -601,12 +600,6 @@ function toggleTranscription() {
   } else {
     startRecording();
   }
-}
-
-function toggleLibras() {
-  state.librasEnabled = !state.librasEnabled;
-  elements.btnLibras?.classList.toggle('active', state.librasEnabled);
-  console.log(`🤟 Libras: ${state.librasEnabled ? 'ativo' : 'desativado'}`);
 }
 
 function clearCaptions() {
@@ -883,8 +876,7 @@ function processTranscript(text) {
     elements.captionsContent.scrollTop = elements.captionsContent.scrollHeight;
   }
   
-  // Envia para VLibras
-  translateToLibras(cleanText);
+  // Fluxo manual: o envio para VLibras e feito pelo botao "Interagir" do plugin
 }
 
 function renderCaptionLines() {

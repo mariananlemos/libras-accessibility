@@ -82,12 +82,6 @@
 
       <!-- PAINEL DE LEGENDA/TRANSCRIÇÃO -->
       <section class="captions-panel">
-        <div class="captions-header">
-          <span>📝 Closed Caption</span>
-          <div class="captions-actions">
-            <button id="btn-clear-captions" class="btn-icon-small" title="Limpar legendas">🗑️</button>
-          </div>
-        </div>
         <div class="captions-content" id="captions-content">
           <div class="caption-lines" id="caption-lines">
             <p class="caption-text caption-placeholder" id="caption-text">
@@ -107,6 +101,7 @@
       <div class="control-group">
         <button id="btn-mic" class="control-btn mic-on" title="Desligar microfone">
           <span class="control-icon">🎤</span>
+          <span class="control-off-x" aria-hidden="true">✕</span>
         </button>
         <span class="control-label">Microfone</span>
       </div>
@@ -115,6 +110,7 @@
       <div class="control-group">
         <button id="btn-camera" class="control-btn camera-on" title="Desligar câmera">
           <span class="control-icon">📷</span>
+          <span class="control-off-x" aria-hidden="true">✕</span>
         </button>
         <span class="control-label">Câmera</span>
       </div>
@@ -125,14 +121,6 @@
           <span class="control-icon">💬</span>
         </button>
         <span class="control-label">Transcrição</span>
-      </div>
-      
-      <!-- Controle de Libras -->
-      <div class="control-group">
-        <button id="btn-libras" class="control-btn active" title="VLibras ativo">
-          <span class="control-icon">🤟</span>
-        </button>
-        <span class="control-label">Libras</span>
       </div>
       
       <!-- Indicador de Status -->

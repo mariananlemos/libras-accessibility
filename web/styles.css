@@ -478,6 +478,7 @@ body {
 }
 
 .control-btn {
+  position: relative;
   width: 52px;
   height: 52px;
   border-radius: 50%;
@@ -499,6 +500,19 @@ body {
   font-size: 22px;
 }
 
+.control-off-x {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
 .control-label {
   font-size: 11px;
   color: var(--text-muted);
@@ -513,12 +527,20 @@ body {
   background: var(--accent-red);
 }
 
+.control-btn.mic-off .control-off-x {
+  display: flex;
+}
+
 .control-btn.camera-on {
   background: var(--bg-tertiary);
 }
 
 .control-btn.camera-off {
   background: var(--accent-red);
+}
+
+.control-btn.camera-off .control-off-x {
+  display: flex;
 }
 
 .control-btn.active {
