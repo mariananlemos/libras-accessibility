@@ -67,12 +67,6 @@ In production, the frontend automatically uses `/api/transcribe`.
 - `vercel.json`: Vercel routing/build config
 - `.vercelignore`: Excludes local-only files from Vercel upload
 
-## Notes
-
-- Do not commit secrets. Keep keys in `.env.local` and Vercel environment variables.
-- `.env.local` is ignored by Git.
-- Use `.env.example` as reference.
-
 ## Tech stack
 
 - Frontend: HTML, CSS, JavaScript
